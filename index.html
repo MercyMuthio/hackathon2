@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel = "stylesheet" href= "style.css">
+        <title>MerciAI</title>
+   
+       
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚Merciii AI</h1>
+            <p>Your all-in-one learning companion</p>
+        </header>
+
+        <div class="tab-container">
+            <button class="tab active" onclick="showTab('study')">📖 Study Buddy</button>
+            <button class="tab" onclick="showTab('mood')">😊 Mood Journal</button>
+            <button class="tab" onclick="showTab('recipes')">🍳 Recipe Finder</button>
+        </div>
+
+        <!-- Study Buddy Section -->
+         
+        <div id="study" class="content-section active">
+            <h2>Create Study Flashcards</h2>
+             <p class="section-intro">Transform your study notes into interactive flashcards for better learning and retention   👌  👌 .</p>
+    
+            <div class="input-group">
+                <textarea id="studyText" placeholder="Enter your study notes here..." rows="6"></textarea>
+                <button onclick="generateFlashcards()">Generate Flashcards</button>
+            </div>
+            <div id="studyResults" class="result-container"></div>
+        </div>
+
+        <!-- Mood Journal Section -->
+     
+        <div id="mood" class="content-section">
+            <h2>Mood Journal</h2>
+             <p class="section-intro">Track your emotions and get AI-powered sentiment analysis to understand your mood patterns  💖.</p>
+            <div class="input-group">
+                <textarea id="moodText" placeholder="How are you feeling today?" rows="6"></textarea>
+                <button onclick="addMoodEntry()">Save Entry</button>
+            </div>
+            <div id="moodResults" class="result-container"></div>
+            <button onclick="loadMoodEntries()" style="background: #48bb78;">View All Entries</button>
+            <div id="allMoodEntries" class="result-container"></div>
+        </div>
+
+        <!-- Recipe Finder Section -->
+        <div id="recipes" class="content-section">
+            <h2>Recipe Finder</h2>
+            
+            <div class="input-group">
+                <input type="text" id="ingredients" placeholder="Enter ingredients (e.g., tomato, onion, pasta)">
+                <button onclick="generateRecipes()">Find Recipes</button>
+            </div>
+            <div id="recipeResults" class="result-container"></div>
+            <button onclick="loadRecipes()" style="background: #dd6b20;">View Saved Recipes</button>
+            <div id="allRecipes" class="result-container"></div>
+        </div>
+    </div>
+
+   <script>
+    function showTab(tabName) {
+        // Hide all content sections
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // Show selected section
+        document.getElementById(tabName).classList.add('active');
+        
+        // Update active tab
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+    }
+
+    // Study Buddy Functions - ALREADY WORKING
+    async function generateFlashcards() {
+        const text = document.getElementById('studyText').value.trim();
+        if (!text) {
+            showError('studyResults', 'Please enter some study text');
+            return;
+        }
+
+        try {
+            console.log('Sending POST request to /generate');
+            
+            const response = await fetch('http://localhost:5000/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                showError('studyResults', data.error);
+            } else {
+                displayFlashcards(data.flashcards);
+            }
+        } catch (error) {
+            showError('studyResults', 'Failed to generate flashcards');
+        }
+    }
+
+    function displayFlashcards(flashcards) {
+        const container = document.getElementById('studyResults');
+        container.innerHTML = '<h3>Generated Flashcards:</h3>';
+        
+        flashcards.forEach((card, index) => {
+            const flashcard = document.createElement('div');
+            flashcard.className = 'flashcard';
+            flashcard.innerHTML = `
+                <strong>Q${index + 1}:</strong> ${card.question}<br>
+                <strong>A${index + 1}:</strong> ${card.answer}
+            `;
+            container.appendChild(flashcard);
+        });
+    }
+
+    // Mood Journal Functions - FIXED URLs
+    async function addMoodEntry() {
+        const text = document.getElementById('moodText').value.trim();
+        if (!text) {
+            showError('moodResults', 'Please enter your feelings');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/mood/entry', {  // FIXED URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            });
+
+            const data = await response.json();
+            
+            // FIXED: Check for correct response structure
+            if (data.success) {
+                showMoodResult(data);
+            } else if (data.error) {
+                showError('moodResults', data.error);
+            } else {
+                showError('moodResults', 'Unexpected response from server');
+            }
+        } catch (error) {
+            showError('moodResults', 'Failed to save mood entry: ' + error.message);
+        }
+    }
+
+    function showMoodResult(data) {
+        const container = document.getElementById('moodResults');
+        container.innerHTML = `
+            <div class="mood-result">
+                <h3>Mood Analysis</h3>
+                <p>Sentiment: <strong>${data.sentiment}</strong></p>
+                <p>Score: <span class="sentiment-score">${data.score}%</span></p>
+                <p class="success">${data.message}</p>
+            </div>
+        `;
+    }
+
+    async function loadMoodEntries() {
+        try {
+            const response = await fetch('http://localhost:5000/mood/entries');  // FIXED URL
+            const data = await response.json();
+            
+            if (data.error) {
+                showError('allMoodEntries', data.error);
+            } else {
+                displayMoodEntries(data.entries);
+            }
+        } catch (error) {
+            showError('allMoodEntries', 'Failed to load mood entries');
+        }
+    }
+
+    function displayMoodEntries(entries) {
+        const container = document.getElementById('allMoodEntries');
+        container.innerHTML = '<h3>All Mood Entries:</h3>';
+        
+        if (entries.length === 0) {
+            container.innerHTML += '<p>No entries yet</p>';
+            return;
+        }
+        
+        entries.forEach(entry => {
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'flashcard';
+            entryDiv.innerHTML = `
+                <p><strong>Date:</strong> ${new Date(entry.created_at).toLocaleString()}</p>
+                <p><strong>Entry:</strong> ${entry.entry_text}</p>
+                <p><strong>Mood:</strong> ${entry.emotion_label} (${entry.sentiment_score * 100}%)</p>
+            `;
+            container.appendChild(entryDiv);
+        });
+    }
+
+    // Recipe Finder Functions - FIXED URLs
+    async function generateRecipes() {
+        const ingredients = document.getElementById('ingredients').value.trim();
+        if (!ingredients) {
+            showError('recipeResults', 'Please enter some ingredients');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/recipes/generate', {  // FIXED URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ingredients: ingredients })
+            });
+
+            const data = await response.json();
+            
+            // FIXED: Check for correct response structure
+            if (data.success) {
+                displayRecipes(data.recipes);
+            } else if (data.error) {
+                showError('recipeResults', data.error);
+            } else {
+                showError('recipeResults', 'Unexpected response from server');
+            }
+        } catch (error) {
+            showError('recipeResults', 'Failed to generate recipes: ' + error.message);
+        }
+    }
+
+    function displayRecipes(recipesText) {
+        const container = document.getElementById('recipeResults');
+        container.innerHTML = '<h3>Generated Recipes:</h3>';
+        
+        const recipeDiv = document.createElement('div');
+        recipeDiv.className = 'recipe-card';
+        recipeDiv.innerHTML = `<p>${recipesText.replace(/\n/g, '<br>')}</p>`;
+        container.appendChild(recipeDiv);
+    }
+
+    async function loadRecipes() {
+        try {
+            const response = await fetch('http://localhost:5000/recipes');  // FIXED URL
+            const data = await response.json();
+            
+            if (data.error) {
+                showError('allRecipes', data.error);
+            } else {
+                displayAllRecipes(data.recipes);
+            }
+        } catch (error) {
+            showError('allRecipes', 'Failed to load recipes');
+        }
+    }
+
+    function displayAllRecipes(recipes) {
+        const container = document.getElementById('allRecipes');
+        container.innerHTML = '<h3>Saved Recipes:</h3>';
+        
+        if (recipes.length === 0) {
+            container.innerHTML += '<p>No recipes yet</p>';
+            return;
+        }
+        
+        recipes.forEach(recipe => {
+            const recipeDiv = document.createElement('div');
+            recipeDiv.className = 'recipe-card';
+            recipeDiv.innerHTML = `
+                <p><strong>Ingredients:</strong> ${recipe.ingredients}</p>
+                <p><strong>Recipe:</strong> ${recipe.recipe_text.replace(/\n/g, '<br>')}</p>
+                <p><strong>Created:</strong> ${new Date(recipe.created_at).toLocaleString()}</p>
+            `;
+            container.appendChild(recipeDiv);
+        });
+    }
+
+    // Utility Functions
+    function showError(containerId, message) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function showSuccess(containerId, message) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `<div class="success">${message}</div>`;
+    }
+</script>
+</body>
+</html>
