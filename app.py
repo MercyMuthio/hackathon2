@@ -441,7 +441,7 @@ if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=5000)  # Change debug=True to debug=False
     print("=" * 50)
     print("MerciAI Study Platform Server")
-    print("=" * 50)git stats
+    print("=" * 50)
     print(f"Database initialized: {db_initialized}")
     print(f"OpenAI API available: {bool(OPENAI_API_KEY)}")
     print(f"Hugging Face API available: {bool(HF_API_KEY)}")
