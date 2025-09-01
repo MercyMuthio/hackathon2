@@ -171,4 +171,16 @@
 
 
         }
-  
+  .demo-message {
+    background: #e6f7ff;
+    border: 2px dashed #1890ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.demo-message h3 {
+    color: #1890ff;
+    margin-bottom: 10px;
+}
