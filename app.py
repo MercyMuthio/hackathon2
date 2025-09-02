@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_cors import cors
+from flask-cors import CORS
 import mysql.connector
 import os
 import random
@@ -14,7 +14,7 @@ load_dotenv()
 
 # Create the main Flask application object
 app = Flask(__name__)
-cors(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for development
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for development
 
 # Configuration for connecting to the MySQL database
 db_config = {
